@@ -1,0 +1,49 @@
+version: "2"
+services:
+  listener:
+    build:
+      context: .
+      dockerfile: infrastructure/prod/listener/Dockerfile
+    ports:
+      - 9125:9125/udp
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_QUEUE_NAME=prod-queue
+    links:
+      - redis:redis
+
+  worker: #can be multiple, it's fine
+    build:
+      context: .
+      dockerfile: infrastructure/prod/worker/Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_QUEUE_NAME=prod-queue
+    links:
+      - redis:redis
+
+  nginx:
+    build:
+      context: ./infrastructure/prod/nginx/
+    environment:
+      - PHP_HOST=application-exporter
+    ports:
+      - 9099:80
+    links:
+      - application-exporter:application-exporter
+
+  application-exporter:
+    build:
+      context: .
+      dockerfile: infrastructure/prod/exporter/Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_QUEUE_NAME=prod-queueq
+    links:
+      - redis:redis
+
+  redis:
+    image: redis

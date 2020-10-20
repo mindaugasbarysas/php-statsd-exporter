@@ -57,6 +57,10 @@ class MetricProcessor
                 // need to calculate sum buckit
                 $genericMetricDerivative = clone $genericMetric;
 
+                if (!is_numeric($genericMetric->getValue())) {
+                    return;
+                }
+
                 $this->backend->inc($this->generateKey($genericMetricDerivative->setName(sprintf('%s_sum', $genericMetric->getName()))), $genericMetric->getValue() / 1000, $this->ttl);
                 $this->backend->inc($this->generateKey($genericMetricDerivative->setName(sprintf('%s_count', $genericMetric->getName()))), 1, $this->ttl);
                 $this->backend->appendList($this->generateKey($genericMetric), $genericMetric->getValue() / 1000, $this->ttl);

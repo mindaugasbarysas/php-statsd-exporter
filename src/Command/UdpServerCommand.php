@@ -28,9 +28,8 @@ class UdpServerCommand extends Command
     protected function configure()
     {
         $this->setDescription('start udp packet listener')
-        ->addOption('port', 'P', InputOption::VALUE_OPTIONAL, 'port to listen on [9125]')
-            ->addOption('host', 'H', InputOption::VALUE_OPTIONAL, 'host to listen on [0.0.0.0]')
-        ;
+            ->addOption('port', 'P', InputOption::VALUE_OPTIONAL, 'port to listen on [9125]')
+            ->addOption('host', 'H', InputOption::VALUE_OPTIONAL, 'host to listen on [0.0.0.0]');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -43,7 +42,7 @@ class UdpServerCommand extends Command
                 function ($string) use ($queueProvider) {
                     $queueProvider->push($string);
                 }
-        );
+            );
 
 
         return Command::SUCCESS;

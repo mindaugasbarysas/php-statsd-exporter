@@ -3,7 +3,7 @@ services:
   application:
     build:
       context: .
-      dockerfile: infrastructure/application/Dockerfile
+      dockerfile: infrastructure/dev/application/Dockerfile
     volumes:
       - .:/src
    # ports:
@@ -20,7 +20,7 @@ services:
     ports:
       - 9099:80
     volumes:
-      - ./infrastructure/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./infrastructure/dev/nginx/conf.d/:/etc/nginx/conf.d/
     links:
       - application-exporter:application-exporter
 
@@ -46,7 +46,7 @@ services:
       - '--web.listen-address=0.0.0.0:9090'
       - '--web.enable-admin-api'
     volumes:
-      - ./infrastructure/prometheus:/etc/prometheus
+      - ./infrastructure/dev/prometheus:/etc/prometheus
 
   redis:
     image: redis

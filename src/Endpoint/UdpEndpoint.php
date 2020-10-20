@@ -17,7 +17,6 @@ class UdpEndpoint
                 usleep(1000);
                 continue;
             }
-
             $processor($string);
         }
     }
