@@ -79,7 +79,6 @@ class MetricProcessor
                 {
                     break;
                 }
-                break;
             default:
                 $this->backend->inc($this->generateKey($genericMetric), (float)str_replace('+', '', $genericMetric->getValue()));
         }
