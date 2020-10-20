@@ -4,12 +4,15 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
+    redis_host: '%env(REDIS_HOST)%'
+    redis_port: '%env(REDIS_PORT)%'
+    queue_name: '%env(REDIS_QUEUE_NAME)%'
 
 services:
     # default configuration for services in *this* file
     _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        autowire: false      # Automatically injects dependencies in your services.
+        autoconfigure: false # Automatically registers your services as commands, event subscribers, etc.
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -26,6 +29,71 @@ services:
     App\Controller\:
         resource: '../src/Controller/'
         tags: ['controller.service_arguments']
+
+    App\Controller\ExportController:
+        class: App\Controller\ExportController
+        arguments:
+            - "@metrics.processor"
+        public: true
+        tags: ['controller.service_arguments']
+
+    udplisten:
+        public: true
+        class: \App\Command\UdpServerCommand
+        calls:
+            - setQueueProcessor: ['@queue.processor']
+        tags: ['console.command']
+
+    worker:
+        public: true
+        class: \App\Command\WorkerCommand
+        calls:
+            - setQueueProcessor: ['@queue.processor']
+        tags: ['console.command']
+
+    export:
+        public: true
+        class: \App\Command\ExportCommand
+        calls:
+            - setMetricsProcessor: ['@metrics.processor']
+        tags: ['console.command']
+
+    #screw autowiring
+    redis.client:
+        public: true
+        class: \Predis\Client
+        arguments:
+            - 'tcp://%redis_host%:%redis_port%'
+
+    metrics.redis_backend:
+        public: true
+        class: \App\Metrics\Backend\RedisBackend
+        arguments:
+        - '@redis.client'
+    metrics.processor:
+        public: true
+        class: \App\Metrics\MetricProcessor
+        arguments:
+            - '@metrics.redis_backend'
+            - ~
+            - 86400 #1 day
+    statsd_parser:
+        public: true
+        class: \App\Parser\StatsDParser
+
+    queue.redis_backend:
+        public: true
+        class: \App\Queue\Backend\RedisBackend
+        arguments:
+            - '@redis.client'
+            - '%queue_name%'
+    queue.processor:
+        public: true
+        class: \App\Queue\QueueProcessor
+        arguments:
+            - '@queue.redis_backend'
+            - '@statsd_parser'
+            - '@metrics.processor'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

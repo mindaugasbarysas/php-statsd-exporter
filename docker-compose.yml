@@ -1,0 +1,52 @@
+version: "2"
+services:
+  application:
+    build:
+      context: .
+      dockerfile: infrastructure/application/Dockerfile
+    volumes:
+      - .:/src
+   # ports:
+   #   - 127.0.0.1:9125:9125/udp
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_QUEUE_NAME=das-q
+    links:
+      - redis:redis
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - 9099:80
+    volumes:
+      - ./infrastructure/nginx/conf.d/:/etc/nginx/conf.d/
+    links:
+      - application-exporter:application-exporter
+
+  application-exporter:
+    image: php:7.3-fpm
+    volumes:
+      - .:/src
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_QUEUE_NAME=das-q
+    links:
+      - redis:redis
+
+  prometheus:
+    image: prom/prometheus
+    links:
+      - nginx:nginx
+    ports:
+      - 127.0.0.1:9999:9090
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.listen-address=0.0.0.0:9090'
+      - '--web.enable-admin-api'
+    volumes:
+      - ./infrastructure/prometheus:/etc/prometheus
+
+  redis:
+    image: redis
